@@ -22,14 +22,14 @@ package org.fineract.messagegateway.sms.util;
  * SMS message delivery status predefined enum constants
  **/
 public enum SmsMessageStatusType {
-	INVALID(0, "smsMessageStatusType.invalid"), // unknown status type
+    INVALID(0, "smsMessageStatusType.invalid"), // unknown status type
     PENDING(100, "smsMessageStatusType.pending"), // message received
     WAITING_FOR_REPORT(150, "smsMessageStatusType.pending"),
     SENT(200, "smsMessageStatusType.sent"), // message sent to the SMS gateway
     DELIVERED(300, "smsMessageStatusType.delivered"), // SMS gateway's attempt to deliver message to recipient's phone was successful
     FAILED(400, "smsMessageStatusType.failed"); // SMS gateway's attempt to deliver message to recipient's phone failed
-	
-	private final Integer value;
+
+    private final Integer value;
     private final String code;
 
     /** 
@@ -85,5 +85,9 @@ public enum SmsMessageStatusType {
      **/
     public String getCode() {
         return this.code;
+    }
+
+    public boolean isFailed() {
+        return this.value.equals(SmsMessageStatusType.FAILED.getValue());
     }
 }
