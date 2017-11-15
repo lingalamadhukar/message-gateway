@@ -23,6 +23,7 @@ import org.fineract.messagegateway.exception.MessageGatewayException;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.providers.SMSProvider;
+import org.fineract.messagegateway.sms.util.SmsMessageStatusType;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -54,7 +55,12 @@ public class AfricasTalkingMessageProvider extends SMSProvider {
             final JSONArray recipients = gateway.sendMessage(mobile, message.getMessage());
             final JSONObject result = recipients.getJSONObject(0);
             message.setExternalId(result.getString("messageId"));
-            message.setDeliveryStatus(AfricasTalkingStatus.smsStatus(result.getString("status")).getValue());
+            final String status = result.getString("status");
+            final SmsMessageStatusType messageStatus = AfricasTalkingStatus.smsStatus(status);
+            message.setDeliveryStatus(messageStatus.getValue());
+            if (messageStatus.isFailed() || messageStatus.isInvalid()) {
+                message.setDeliveryErrorMessage(status);
+            }
         } catch (final Exception e) {
             throw new MessageGatewayException(e.getMessage());
         }

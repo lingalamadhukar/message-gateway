@@ -90,4 +90,8 @@ public enum SmsMessageStatusType {
     public boolean isFailed() {
         return this.value.equals(SmsMessageStatusType.FAILED.getValue());
     }
+
+    public boolean isInvalid() {
+        return this.value.equals(SmsMessageStatusType.INVALID.getValue());
+    }
 }
