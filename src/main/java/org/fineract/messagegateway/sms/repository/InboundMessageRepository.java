@@ -16,19 +16,14 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.fineract.messagegateway.exception;
+package org.fineract.messagegateway.sms.repository;
 
-public class SecurityException extends RuntimeException {
+import org.fineract.messagegateway.sms.domain.InboundMessage;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.stereotype.Repository;
 
-    private SecurityException(final String msg) {
-        super(msg);
-    }
+@Repository
+public interface InboundMessageRepository extends JpaRepository<InboundMessage, Long>, JpaSpecificationExecutor<InboundMessage> {
 
-    public static SecurityException tenantAlreadyExisits(final String tenant) {
-        return new SecurityException("Tenant Already existing with " + tenant + " identifier");
-    }
-
-    public static SecurityException tenantNotFound(final String tenant) {
-        return new SecurityException("Tenant with identifier `" + tenant + "` is not found");
-    }
 }

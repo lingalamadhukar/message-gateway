@@ -85,4 +85,12 @@ public class SecurityService {
 			throw new UnexpectedException();
 		}
 	}
+
+    public Tenant findTenantWithNotFoundDetection(String tenantIdentifier) {
+        Tenant tenant = this.tenantRepository.findByTenantId(tenantIdentifier) ;
+        if(tenant == null) {
+                throw org.fineract.messagegateway.exception.SecurityException.tenantNotFound(tenantIdentifier) ;
+        }
+        return tenant;
+    }
 }

@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.fineract.messagegateway.configuration.HostConfig;
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.providers.SMSProvider;
@@ -101,5 +102,11 @@ public class InfoBipMessageProvider extends SMSProvider {
     	String password = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_AUTH_TOKEN) ;
     	final SendMultipleTextualSmsAdvanced client = new SendMultipleTextualSmsAdvanced(new BasicAuthConfiguration(userName, password));
         return client;
+    }
+
+    @SuppressWarnings("unused")
+    @Override
+    public InboundMessage createInboundMessage(Long tenantId, String payload) {
+        return null;
     }
 }

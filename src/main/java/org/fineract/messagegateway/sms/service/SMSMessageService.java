@@ -22,6 +22,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Date;
+import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -31,10 +32,20 @@ import java.util.concurrent.TimeUnit;
 import javax.annotation.PostConstruct;
 import javax.sql.DataSource;
 
+import org.apache.commons.lang.StringUtils;
 import org.fineract.messagegateway.service.SecurityService;
+import org.fineract.messagegateway.sms.constants.SmsConstants;
 import org.fineract.messagegateway.sms.data.DeliveryStatusData;
+import org.fineract.messagegateway.sms.domain.ExternalService;
+import org.fineract.messagegateway.sms.domain.ExternalServiceProperties;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
+import org.fineract.messagegateway.sms.exception.ProviderNotDefinedException;
+import org.fineract.messagegateway.sms.providers.SMSProvider;
 import org.fineract.messagegateway.sms.providers.SMSProviderFactory;
+import org.fineract.messagegateway.sms.repository.ExternalServicePropertiesRepository;
+import org.fineract.messagegateway.sms.repository.ExternalServiceRepository;
+import org.fineract.messagegateway.sms.repository.InboundMessageRepository;
 import org.fineract.messagegateway.sms.repository.SmsOutboundMessageRepository;
 import org.fineract.messagegateway.sms.util.SmsMessageStatusType;
 import org.fineract.messagegateway.tenants.domain.Tenant;
@@ -64,16 +75,27 @@ public class SMSMessageService {
 	
 	private final SecurityService securityService ;
 	
+	private final ExternalServiceRepository externalServiceRepository;
+	
+	private final InboundMessageRepository inboundMessageRepository;
+	
+	private final ExternalServicePropertiesRepository externalServicePropertiesRepository;
 	
 	@Autowired
 	public SMSMessageService(final SmsOutboundMessageRepository smsOutboundMessageRepository,
 			final SMSProviderFactory smsProviderFactory,
 			final DataSource dataSource,
-			final SecurityService securityService) {
+			final SecurityService securityService,
+			final ExternalServiceRepository externalServiceRepository,
+			final InboundMessageRepository inboundMessageRepository,
+			final ExternalServicePropertiesRepository externalServicePropertiesRepository) {
 		this.smsOutboundMessageRepository = smsOutboundMessageRepository ;
 		this.smsProviderFactory = smsProviderFactory ;
 		this.jdbcTemplate = new JdbcTemplate(dataSource) ;
 		this.securityService = securityService ;
+		this.externalServiceRepository = externalServiceRepository;
+		this.inboundMessageRepository = inboundMessageRepository;
+		this.externalServicePropertiesRepository = externalServicePropertiesRepository;
 	}
 	
 	@PostConstruct
@@ -120,7 +142,7 @@ public class SMSMessageService {
 		}
 		
 		@Override
-		public DeliveryStatusData mapRow(ResultSet rs, int rowNum) throws SQLException { 
+		public DeliveryStatusData mapRow(ResultSet rs, @SuppressWarnings("unused") int rowNum) throws SQLException { 
 			String internalId = rs.getString("internal_id") ;
 			String externalId = rs.getString("external_id") ;
 			Date deliveredOnDate = rs.getDate("delivered_on_date") ;
@@ -181,4 +203,49 @@ public class SMSMessageService {
 			return totalPageSize;
 		}
 	}
+
+    public void triggerInboundMessage(final String tenantIdentifier, final String payload) {
+        logger.debug("Request Received to inbound messages.....");
+        final Tenant tenant = this.securityService.findTenantWithNotFoundDetection(tenantIdentifier);
+        final ExternalService externalService = this.externalServiceRepository.findByNameAndTenantId(SmsConstants.SMS_PROVIDER,
+                tenant.getId());
+        if (externalService == null) { throw new RuntimeException("External Service Not found"); }
+        final List<ExternalServiceProperties> properties = this.externalServicePropertiesRepository.findByExternalServiceId(externalService.getId());
+        String smsProvider = null;
+        for (ExternalServiceProperties externalServiceProperties : properties) {
+            if (externalServiceProperties.name().equalsIgnoreCase(SmsConstants.SMS_PROVIDER)) {
+                smsProvider = externalServiceProperties.value();
+                break;
+            }
+        }
+        if (StringUtils.isBlank(smsProvider)) { throw new RuntimeException("SMS Provider is not configured"); }
+        try {
+            SMSProvider provider = this.smsProviderFactory.getSMSProvider(smsProvider);
+            InboundMessage message = provider.createInboundMessage(tenant.getId(), payload);
+            if (message == null) {
+                throw new RuntimeException("Message Inbound Provider is not implemented");
+            }
+            this.inboundMessageRepository.save(message);
+            this.executorService.execute(new InboundMessageTask(this.smsProviderFactory, message));
+        } catch (ProviderNotDefinedException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Sms Provider not configured");
+        }
+    }
+
+    class InboundMessageTask implements Runnable {
+
+        final InboundMessage message;
+        final SMSProviderFactory smsProviderFactory;
+
+        public InboundMessageTask(final SMSProviderFactory smsProviderFactory, final InboundMessage message) {
+            this.smsProviderFactory = smsProviderFactory;
+            this.message = message;
+        }
+
+        @Override
+        public void run() {
+            this.smsProviderFactory.triggerInboundMessage(message);
+        }
+    }
 }

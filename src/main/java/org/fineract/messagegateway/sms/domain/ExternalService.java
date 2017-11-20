@@ -16,19 +16,27 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.fineract.messagegateway.exception;
+package org.fineract.messagegateway.sms.domain;
 
-public class SecurityException extends RuntimeException {
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
-    private SecurityException(final String msg) {
-        super(msg);
+@Entity
+@Table(name = "m_external_service", uniqueConstraints = { @UniqueConstraint(columnNames = { "name", "tenant_id" }, name = "name_UNIQUE") })
+public class ExternalService extends AbstractPersistableCustom<Long> {
+
+    @Column(name = "name", length = 50)
+    private String name;
+
+    @Column(name = "tenant_id")
+    private Long tenantId;
+
+    protected ExternalService() {}
+
+    public String name() {
+        return this.name;
     }
 
-    public static SecurityException tenantAlreadyExisits(final String tenant) {
-        return new SecurityException("Tenant Already existing with " + tenant + " identifier");
-    }
-
-    public static SecurityException tenantNotFound(final String tenant) {
-        return new SecurityException("Tenant with identifier `" + tenant + "` is not found");
-    }
 }

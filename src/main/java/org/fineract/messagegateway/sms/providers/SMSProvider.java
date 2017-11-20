@@ -22,19 +22,21 @@ import java.util.Base64;
 
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 
 public abstract class SMSProvider {
-	
-	public abstract void sendMessage(final SMSBridge smsBridgeConfig, final SMSMessage message)
-	        throws MessageGatewayException ;
-	
-	protected String encodeBase64(final SMSBridge smsBridgeConfig) {
-		String tenant = smsBridgeConfig.getTenantId().toString() ;
-		String username = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_ACCOUNT_ID) ;
-    	String password = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_AUTH_TOKEN) ;
-        String userPass = username + ":" + password + ":" + tenant;
+
+    public abstract void sendMessage(final SMSBridge smsBridgeConfig, final SMSMessage message) throws MessageGatewayException;
+
+    protected String encodeBase64(final SMSBridge smsBridgeConfig) {
+        final String tenant = smsBridgeConfig.getTenantId().toString();
+        final String username = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_ACCOUNT_ID);
+        final String password = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_AUTH_TOKEN);
+        final String userPass = username + ":" + password + ":" + tenant;
         return Base64.getEncoder().encodeToString(userPass.getBytes());
     }
+
+    public abstract InboundMessage createInboundMessage(final Long tenantId, final String payload);
 }

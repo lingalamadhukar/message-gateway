@@ -21,6 +21,7 @@ package org.fineract.messagegateway.sms.providers.impl.dummy;
 import java.util.Date;
 
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.providers.SMSProvider;
@@ -46,4 +47,11 @@ public class DummySMSProvider extends SMSProvider{
 			message.setDeliveredOnDate(new Date());
 		}
 	}
+
+    @SuppressWarnings("unused")
+    @Override
+    public InboundMessage createInboundMessage(Long tenantId, String payload) {
+        // TODO Auto-generated method stub
+        return null;
+    }
 }

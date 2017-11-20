@@ -47,6 +47,19 @@ public interface SmsConstants extends MessageGatewayConstants{
 	
 	String configvalue_paramname = "configValue" ;
 	
+	String SMS_PROVIDER = "SMS_PROVIDER";
+	
+	String BASIC_URL = "BASIC_URL";
+	
+	String AUTHENTICATION_URI = "AUTHENTICATION_URI";
+	
+	String SMS_URI = "SMS_URI";
+	
+	String USERNAME = "username";
+	String PASSWORD = "password";
+	
+	String SMS_USER_CREDENTIALS = "SMS_USER_CREDENTIALS";
+	
 	Set<String> supportedParameters = new HashSet<>(Arrays.asList(phoneNo_paramname,
 			providername_paramname, providerkey_paramname, countrycode_paramname, providerdescription_paramname, bridgeconfigurations_paramname, configvalue_paramname));
 }

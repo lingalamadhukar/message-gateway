@@ -28,6 +28,7 @@ import org.fineract.messagegateway.sms.service.SMSMessageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -60,5 +61,12 @@ public class SmsApiResource {
     		@RequestBody final Collection<Long> internalIds) {
     	Collection<DeliveryStatusData> deliveryStatus = this.smsMessageService.getDeliveryStatus(tenantId, appKey, internalIds) ;
     	return new ResponseEntity<>(deliveryStatus, HttpStatus.OK);
+    }
+    
+    @RequestMapping(value = "/receivesms/{tenantIdentifier}", method = RequestMethod.POST)
+    public ResponseEntity<Void> receiveMessages(@PathVariable(MessageGatewayConstants.TENANT_IDENTIFIER) final String tenantIdentifier,
+                @RequestBody final String payload) {
+        this.smsMessageService.triggerInboundMessage(tenantIdentifier, payload);
+       return new ResponseEntity<>(HttpStatus.ACCEPTED);
     }
 }

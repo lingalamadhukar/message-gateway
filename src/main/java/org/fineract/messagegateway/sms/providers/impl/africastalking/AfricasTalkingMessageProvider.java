@@ -18,8 +18,11 @@
  */
 package org.fineract.messagegateway.sms.providers.impl.africastalking;
 
+import java.net.URLDecoder;
+
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.providers.SMSProvider;
@@ -66,4 +69,17 @@ public class AfricasTalkingMessageProvider extends SMSProvider {
         }
     }
 
+
+    @SuppressWarnings({ "deprecation" })
+    @Override
+    public InboundMessage createInboundMessage(Long tenantId, String payload) {
+        String[] str = payload.split("&");
+        String[] textArray = str[1].split("=");
+        String ussdCode = textArray[1];
+        String[] mobileNoArray = str[5].split("=");
+        mobileNoArray[1] = URLDecoder.decode(mobileNoArray[1]);
+        String mobileNo = mobileNoArray[1].trim();
+        InboundMessage message = InboundMessage.getInstance(tenantId, mobileNo, ussdCode);
+        return message;
+    }
 }

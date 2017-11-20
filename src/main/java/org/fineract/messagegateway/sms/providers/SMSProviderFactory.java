@@ -19,14 +19,27 @@
 package org.fineract.messagegateway.sms.providers;
 
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.constants.SmsConstants;
+import org.fineract.messagegateway.sms.domain.ExternalService;
+import org.fineract.messagegateway.sms.domain.ExternalServiceProperties;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.exception.ProviderNotDefinedException;
 import org.fineract.messagegateway.sms.exception.SMSBridgeNotFoundException;
+import org.fineract.messagegateway.sms.repository.ExternalServicePropertiesRepository;
+import org.fineract.messagegateway.sms.repository.ExternalServiceRepository;
 import org.fineract.messagegateway.sms.repository.SMSBridgeRepository;
+import org.fineract.messagegateway.sms.util.HttpClientUtil;
 import org.fineract.messagegateway.sms.util.SmsMessageStatusType;
+import org.fineract.messagegateway.tenants.domain.Tenant;
+import org.fineract.messagegateway.tenants.repository.TenantRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
@@ -34,6 +47,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Component;
+import org.springframework.util.CollectionUtils;
+
+import com.google.gson.JsonObject;
 
 @Component
 public class SMSProviderFactory implements ApplicationContextAware {
@@ -43,10 +59,20 @@ public class SMSProviderFactory implements ApplicationContextAware {
 	private ApplicationContext applicationContext;
 
 	private final SMSBridgeRepository smsBridgeRepository;
+	
+	private final ExternalServiceRepository externalServiceRepository;
+	
+	private final TenantRepository tenantRepository;
+	
+	private final ExternalServicePropertiesRepository externalServicePropertiesRepository;
 
 	@Autowired
-	public SMSProviderFactory(final SMSBridgeRepository smsBridgeRepository) {
+	public SMSProviderFactory(final SMSBridgeRepository smsBridgeRepository, final ExternalServiceRepository externalServiceRepository,
+	        final TenantRepository tenantRepository, final ExternalServicePropertiesRepository externalServicePropertiesRepository) {
 		this.smsBridgeRepository = smsBridgeRepository;
+		this.externalServiceRepository = externalServiceRepository;
+		this.tenantRepository = tenantRepository;
+		this.externalServicePropertiesRepository = externalServicePropertiesRepository;
 	}
 
 	public SMSProvider getSMSProvider(final SMSMessage message) throws SMSBridgeNotFoundException, ProviderNotDefinedException {
@@ -104,4 +130,54 @@ public class SMSProviderFactory implements ApplicationContextAware {
 			}
 		}
 	}
+
+    public void triggerInboundMessage(final InboundMessage message) {
+        final Tenant tenant = this.tenantRepository.findOne(message.getTenantId());
+        final String baseURL = getConfiguredExternalValue(SmsConstants.BASIC_URL, message.getTenantId());
+        final String authenticationURI = getConfiguredExternalValue(SmsConstants.AUTHENTICATION_URI, message.getTenantId());
+        final String smsURI = getConfiguredExternalValue(SmsConstants.SMS_URI, message.getTenantId());
+        final ExternalService externalService = getExternalSerice(SmsConstants.SMS_USER_CREDENTIALS, message.getTenantId());
+        final Map<String, String> credentials =getExternalPropertiesAsMap(externalService);
+        final String username = credentials.get(SmsConstants.USERNAME);
+        final String password = credentials.get(SmsConstants.PASSWORD);
+        if (StringUtils.isBlank(username) || StringUtils.isBlank(password)) {
+            throw new RuntimeException("SMS user credentials are not mapped");
+        }
+        JsonObject payload = new JsonObject();
+        payload.addProperty("mobileNumber", message.getMobileNumber());
+        payload.addProperty("ussdCode", message.getUssdCode());
+        HttpClientUtil.sendInboundSMSRequest(tenant.getTenantId(), baseURL, authenticationURI, smsURI, payload.toString(), username, password);
+    }
+
+    public SMSProvider getSMSProvider(final String providerKey) throws ProviderNotDefinedException {
+        final SMSProvider provider = (SMSProvider) this.applicationContext.getBean(providerKey);
+        if (provider == null) { throw new ProviderNotDefinedException(); }
+        return provider;
+    }
+
+    private String getConfiguredExternalValue(final String propery, final Long tenantId) {
+        final ExternalService externalService = getExternalSerice(propery, tenantId);
+        final Map<String, String> map = getExternalPropertiesAsMap(externalService);
+        if (StringUtils.isBlank(map.get(propery))) { throw new RuntimeException("External server configuration "+propery+" is not configured"); }
+        return map.get(propery);
+    }
+    
+    private Map<String, String> getExternalPropertiesAsMap(final ExternalService externalService) {
+        final List<ExternalServiceProperties> properties = this.externalServicePropertiesRepository.findByExternalServiceId(externalService.getId());
+        Map<String, String> map = new HashMap<>();
+        if (!CollectionUtils.isEmpty(properties)) {
+            for (ExternalServiceProperties externalServiceProperties : properties) {
+                map.put(externalServiceProperties.name(), externalServiceProperties.value());
+            }
+        }
+        return map;
+    }
+
+    private ExternalService getExternalSerice(final String propery, final Long tenantId) {
+        final ExternalService externalService = this.externalServiceRepository.findByNameAndTenantId(propery, tenantId);
+        if (externalService == null) {
+            throw new RuntimeException("External server configuration "+propery+" is not configured");
+        }
+        return externalService;
+    }
 }

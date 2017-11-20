@@ -24,6 +24,7 @@ import java.util.HashMap;
 import org.fineract.messagegateway.configuration.HostConfig;
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
 import org.fineract.messagegateway.sms.providers.SMSProvider;
@@ -105,5 +106,12 @@ public class TwilioMessageProvider extends SMSProvider {
     	String providerAuthToken = smsBridgeConfig.getConfigValue(MessageGatewayConstants.PROVIDER_AUTH_TOKEN) ;
         final TwilioRestClient client = new TwilioRestClient.Builder(providerAccountId, providerAuthToken).build();
         return client;
+    }
+
+    @SuppressWarnings("unused")
+    @Override
+    public InboundMessage createInboundMessage(Long tenantId, String payload) {
+        // TODO Auto-generated method stub
+        return null;
     }
 }
