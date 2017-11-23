@@ -79,7 +79,9 @@ public class AfricasTalkingMessageProvider extends SMSProvider {
         String[] mobileNoArray = str[5].split("=");
         mobileNoArray[1] = URLDecoder.decode(mobileNoArray[1]);
         String mobileNo = mobileNoArray[1].trim();
-        InboundMessage message = InboundMessage.getInstance(tenantId, mobileNo, ussdCode);
+        int size = mobileNo.length();
+        String incomingMobileNo = mobileNo.substring(1, size);
+        InboundMessage message = InboundMessage.getInstance(tenantId, incomingMobileNo, ussdCode);
         return message;
     }
 }

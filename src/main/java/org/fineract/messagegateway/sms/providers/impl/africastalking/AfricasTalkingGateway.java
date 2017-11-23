@@ -74,6 +74,7 @@ public class AfricasTalkingGateway
     	HashMap<String, String> data = new HashMap<String, String>();
     	data.put("username", _username);
     	data.put("to", to_);
+    	data.put("from", "CaritasNRB");
     	data.put("message", message_);
 	
     	return sendMessageImpl(to_, message_, data);
