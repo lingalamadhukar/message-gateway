@@ -20,6 +20,13 @@ spring:
     username: root
     password: mysql
     driver-class-name: org.drizzle.jdbc.DrizzleDriver
+    validation-query: SELECT 1 FROM dual
+    max-active: 100
+    max-idle: 8
+    min-idle: 1
+    initial-size: 10
+    testOnBorrow: true
+    testWhileIdle: true
 
 # Status Callback configuration for Twilio. Port will be taken from server configuration
 hostconfig:
