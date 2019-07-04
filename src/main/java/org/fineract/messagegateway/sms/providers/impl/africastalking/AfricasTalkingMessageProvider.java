@@ -19,9 +19,12 @@
 package org.fineract.messagegateway.sms.providers.impl.africastalking;
 
 import java.net.URLDecoder;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
+import org.fineract.messagegateway.sms.constants.SmsConstants;
 import org.fineract.messagegateway.sms.domain.InboundMessage;
 import org.fineract.messagegateway.sms.domain.SMSBridge;
 import org.fineract.messagegateway.sms.domain.SMSMessage;
@@ -32,6 +35,8 @@ import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+
+import com.google.common.base.Splitter;
 
 @Service(value = "AfricasTalking")
 public class AfricasTalkingMessageProvider extends SMSProvider {
@@ -73,14 +78,14 @@ public class AfricasTalkingMessageProvider extends SMSProvider {
     @SuppressWarnings({ "deprecation" })
     @Override
     public InboundMessage createInboundMessage(Long tenantId, String payload) {
-        String[] str = payload.split("&");
-        String[] textArray = str[1].split("=");
-        String ussdCode = textArray[1];
-        String[] mobileNoArray = str[5].split("=");
-        mobileNoArray[1] = URLDecoder.decode(mobileNoArray[1]);
-        String mobileNo = mobileNoArray[1].trim();
-        int size = mobileNo.length();
-        String incomingMobileNo = mobileNo.substring(1, size);
+        payload = payload.replace("{", "");
+        payload = payload.replace("}", "");
+        Map<String,String> mp = Splitter.on('&')
+                .withKeyValueSeparator('=')
+                .split(payload);
+        String ussdCode =  mp.get(SmsConstants.text);
+        String incomingMobileNo = mp.get(SmsConstants.from);
+        incomingMobileNo = URLDecoder.decode(incomingMobileNo);
         InboundMessage message = InboundMessage.getInstance(tenantId, incomingMobileNo, ussdCode);
         return message;
     }
