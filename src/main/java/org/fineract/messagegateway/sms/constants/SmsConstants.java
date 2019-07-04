@@ -60,6 +60,10 @@ public interface SmsConstants extends MessageGatewayConstants{
 	
 	String SMS_USER_CREDENTIALS = "SMS_USER_CREDENTIALS";
 	
+	String from = "from";
+
+	String text = "text";
+	
 	Set<String> supportedParameters = new HashSet<>(Arrays.asList(phoneNo_paramname,
 			providername_paramname, providerkey_paramname, countrycode_paramname, providerdescription_paramname, bridgeconfigurations_paramname, configvalue_paramname));
 }
