@@ -20,7 +20,6 @@ package org.fineract.messagegateway.sms.providers.impl.africastalking;
 
 import java.net.URLDecoder;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import org.fineract.messagegateway.constants.MessageGatewayConstants;
 import org.fineract.messagegateway.exception.MessageGatewayException;
@@ -86,6 +85,9 @@ public class AfricasTalkingMessageProvider extends SMSProvider {
         String ussdCode =  mp.get(SmsConstants.text);
         String incomingMobileNo = mp.get(SmsConstants.from);
         incomingMobileNo = URLDecoder.decode(incomingMobileNo);
+        String mobileNo = incomingMobileNo.trim();
+        int size = mobileNo.length();
+        incomingMobileNo = mobileNo.substring(1, size);
         InboundMessage message = InboundMessage.getInstance(tenantId, incomingMobileNo, ussdCode);
         return message;
     }
